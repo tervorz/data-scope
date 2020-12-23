@@ -1,5 +1,5 @@
-(ns data-scope.inspect
-  (:require [clojure.inspector :as inspector]))
+(in-ns 'ds)
+(clojure.core/refer-clojure)
 
 (defn inspect-table [[f :as data]]
   (->> (cond
@@ -8,7 +8,7 @@
                                                         [(keyword (str k)) v])
                                                       %))
                                data))
-       inspector/inspect-table))
+       clojure.inspector/inspect-table))
 
 (def ds-i-font-size (atom 18))
 
@@ -18,7 +18,7 @@
    (inspect-tree data @ds-i-font-size))
   ([data font-size]
    (let [frame         (javax.swing.JFrame. "Clojure Inspector")
-         tree          (javax.swing.JTree. (inspector/tree-model data))
+         tree          (javax.swing.JTree. (clojure.inspector/tree-model data))
          reset-tree!   (fn [font font-size]
                          (doto tree
                            (.setRowHeight (+ font-size 10))
@@ -58,13 +58,13 @@
 (defn scope-inspect-tree-thread-last [form]
   `((fn [x#]
       (let [form# (->> x# ~form)]
-        ('~inspector/inspect-tree form#)
+        ('~clojure.inspector/inspect-tree form#)
         form#))))
 
 (defn scope-inspect-tree-thread-first [form]
   `((fn [x#]
       (let [form# (-> x# ~form)]
-        ('~inspector/inspect-tree form#)
+        ('~clojure.inspector/inspect-tree form#)
         form#))))
 
 (defn scope-inspect-table [form]

@@ -1,13 +1,16 @@
 # data-scope
 
-A Clojure library inspired by [Spyscope](https://github.com/dgrnbrg/spyscope) to provide tools for interactively visualizing data.
+A Clojure library to provide tools for interactively visualizing data. This version 
+was forked from the original [data-scope](https://github.com/jsofra/data-scope), 
+which was inspired by [Spyscope](https://github.com/dgrnbrg/spyscope).
 
 
 ## Contributors
 
-* James Sofra (@sofra)
-* Denis Korzunov [https://github.com/disya2](https://github.com/disya2)
-* [https://github.com/sundbp](https://github.com/sundbp)
+* Trevor Brandt (@tervorz, maintainer)
+* James Sofra (@sofra) (prior to the fork)
+* Denis Korzunov [https://github.com/disya2](https://github.com/disya2) (prior to the fork)
+* [https://github.com/sundbp](https://github.com/sundbp) (prior to the fork)
 
 
 ## Installation
@@ -15,34 +18,41 @@ A Clojure library inspired by [Spyscope](https://github.com/dgrnbrg/spyscope) to
 
 #### Leiningen
 
-Add `[jsofra/data-scope "0.1.2"]` to your project.clj's `:dependencies`.
+Add `[tervorz/data-scope "0.1.3"]` to your project.clj's `:dependencies`.
 
-If you want data-scope to be automatically loaded and available in every project,
-add the following to the `:user` profile in `~/.lein/profiles.clj`:
+If you want data-scope to be automatically loaded and available in every project's
+`user` namespace, add the following to the `:user` profile in `~/.lein/profiles.clj`:
 
-    :dependencies [[jsofra/data-scope "0.1.2"]]
-    :injections [(require 'data-scope.charts)
-                 (require 'data-scope.graphs)
-                 (require 'data-scope.inspect)
-                 (require 'data-scope.pprint)]
+    :dependencies [[tervorz/data-scope "0.1.3"]]
+    :injections [(require 'ds)]
 
 #### Boot
 
 After requiring the namespace, you must also run `(boot.core/load-data-readers!)`
 to get the reader tags working. Using a `~/.boot/profile.boot` file:
 
-```
-(set-env! :dependencies #(conj % '[jsofra/data-scope "0.1.2"]))
+``` clojure
+(set-env! :dependencies #(conj % '[tervorz/data-scope "0.1.3"]))
 (boot.core/load-data-readers!)
-(require 'data-scope.charts)
-(require 'data-scope.graphs)
-(require 'data-scope.inspect)
-(require 'data-scope.pprint)
+(require 'ds)
 ```
 
 ## Usage
 
 Data-scope includes a number of reader tools for visualizing Clojure data.
+
+To use in any namespace, you'll need to `require` it:
+
+``` clojure
+(ns my.namespace
+  (:require [ds]))
+  
+(defn my-function
+  [input]
+  (->> #pp input
+       #pp->> (map inc)
+       (apply +)))
+```
 
 Currently there are readers tags for visualizing data as both charts, graphs, tables and trees.
 There is also support for pretty printing data. See all the usage examples below for the details.
@@ -86,19 +96,19 @@ user> (let [data [(range 9 19) (range 4 14) (range 2 12) (range 20 30)]]
 
 The pretty print tags are:
 
-* `#ds/pp` - *Pretty print a form*
-* `#ds/pp->` - *thread first version that can be used inside a thread first pipe line.*
-* `#ds/pp->>` - *thread last version that can be used inside a thread first pipe line.*
+* `#ds/pp` (or just `#pp`) - *Pretty print a form*
+* `#ds/pp->` (or just `#pp->`) - *thread first version that can be used inside a thread first pipe line.*
+* `#ds/pp->>` (or just `#pp->>`) - *thread last version that can be used inside a thread first pipe line.*
 
 * `#ds/pt` - *Print data as a table*
 * `#ds/pt->` - *thread first version that can be used inside a thread first pipe line.*
 * `#ds/pt->>` - *thread last version that can be used inside a thread first pipe line.*
 
-#### `#ds/pp`
+#### `#pp`
 
 ``` clojure
 user> (let [data [{:a 4 :b (range 20) :c [{:b 4 :n {:v {:d {:f [4 4]}}}}]}]]
-        #ds/pp data)
+        #pp data)
 
 [{:a 4,
   :b (0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19),
@@ -107,7 +117,7 @@ user> (let [data [{:a 4 :b (range 20) :c [{:b 4 :n {:v {:d {:f [4 4]}}}}]}]]
 [{:a 4, :b (0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19), :c [{:b 4, :n {:v {:d {:f [4 4]}}}}]}]
 
 user> (->> [1 2 3]
-        #ds/pp->> (map (fn [x] (inc x)))
+        #pp->> (map (fn [x] (inc x)))
         (map (fn [x] (* x x))))
 
 (2 3 4)

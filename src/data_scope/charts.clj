@@ -1,8 +1,5 @@
-(ns data-scope.charts
-  (:require [incanter.core :as incanter]
-            [incanter.charts :as charts]
-
-            [clojure.core.cache :as cache]))
+(in-ns 'ds)
+(clojure.core/refer-clojure)
 
 (defn apply-row-op [data op]
   (mapv #(apply op %) data))
@@ -12,7 +9,7 @@
 
 (defn var-identity [& args] args)
 
-(defn op-applicator-dispatch [applicator data]
+(defn op-applicator-dispatch [_applicator data]
   [(type data) (first (map type data))])
 
 (defmulti op-applicator #'op-applicator-dispatch)
@@ -44,7 +41,7 @@
    (build-category-chart chart data data))
   ([chart labels data]
    (reduce (fn [c [l d]]
-             (charts/add-categories
+             (incanter.charts/add-categories
               c (range) d
               :series-label (str (if (seq? l) (into [] l) l))))
            chart
@@ -62,7 +59,7 @@
 
 (defn view-chart
   [chart-builder empty-chart applicator op data post-application-fn]
-  (incanter/view (apply chart-builder
+  (incanter.core/view (apply chart-builder
                         empty-chart
                         (-> ((op-applicator applicator data) op)
                             post-application-fn))))
@@ -83,10 +80,10 @@
                  (set-chart-data chart-builder chart data applicator op post-application-fn)))))
 
 (def tagged-expr-cache
-  (atom (cache/lru-cache-factory {})))
+  (atom (clojure.core.cache/lru-cache-factory {})))
 
 (defn reset-expr-cache! []
-  (reset! tagged-expr-cache (cache/lru-cache-factory {})))
+  (reset! tagged-expr-cache (clojure.core.cache/lru-cache-factory {})))
 
 (defn set-expr-cache! [cache-factory & opts]
   (swap! tagged-expr-cache #(apply cache-factory % opts)))
@@ -105,7 +102,7 @@
 (def ds-print-length (atom 10))
 (def ds-print-level (atom 5))
 
-(defn ^:dynamic ^:private scope
+(defn ^:dynamic ^:private chart-scope
   "Create a scope (data inspection) for a chart."
   [chart-builder empty-chart-fn
    applicator op form & {:keys [post-apply-fn
@@ -124,9 +121,9 @@
            title#     (chart-title ~title-prefix '~form)
            expr-hash# (hash '~form)]
        (if (and ~persist?
-                (cache/has? @tagged-expr-cache expr-hash#))
+                (clojure.core.cache/has? @tagged-expr-cache expr-hash#))
          (do
-           (let [[cached-chart# cached-data#] (cache/lookup
+           (let [[cached-chart# cached-data#] (clojure.core.cache/lookup
                                                @tagged-expr-cache
                                                expr-hash#)]
              (set-chart-data ~chart-builder
@@ -134,7 +131,7 @@
                                                          form#
                                                          ~accumulating?)
                              ~applicator ~op ~post-apply-fn))
-           (swap! tagged-expr-cache cache/hit expr-hash#))
+           (swap! tagged-expr-cache clojure.core.cache/hit expr-hash#))
          (let [chart# (~chart-modifier-fn (empty-chart ~empty-chart-fn title#))
                data#  (if (instance? clojure.lang.IRef form#)
                         (do
@@ -143,15 +140,15 @@
                           @form#)
                         form#)
                data# (if ~accumulating? [data#] data#)]
-           (swap! tagged-expr-cache cache/miss expr-hash# [chart# (atom data#)])
+           (swap! tagged-expr-cache clojure.core.cache/miss expr-hash# [chart# (atom data#)])
            (view-chart ~chart-builder chart# ~applicator ~op data# ~post-apply-fn)))
        form#)))
 
 (defn category-chart-scope [& args]
-  (apply scope (partial build-category-chart) args))
+  (apply chart-scope (partial build-category-chart) args))
 
 (defn pie-chart-scope [& args]
-  (apply scope (partial build-pie-chart) args))
+  (apply chart-scope (partial build-pie-chart) args))
 
 
 (defn vectorize-items [data] (mapv vector data))
@@ -175,11 +172,11 @@
 
 (defn scope-bar-row [form op & options]
   (apply category-chart-scope
-         `charts/bar-chart apply-row-op op form options))
+         `incanter.charts/bar-chart apply-row-op op form options))
 
 (defn scope-bar-col [form op & options]
   (apply category-chart-scope
-         `charts/bar-chart apply-col-op op form options))
+         `incanter.charts/bar-chart apply-col-op op form options))
 
 (defn scope-bar [form & options]
   (apply scope-bar-row form var-identity options))
@@ -225,11 +222,11 @@
 
 (defn scope-line-row [form op & options]
   (apply category-chart-scope
-         `charts/line-chart apply-row-op op form options))
+         `incanter.charts/line-chart apply-row-op op form options))
 
 (defn scope-line-col [form op & options]
   (apply category-chart-scope
-         `charts/line-chart apply-col-op op form options))
+         `incanter.charts/line-chart apply-col-op op form options))
 
 (defn scope-line [form & options]
   (apply scope-line-row form var-identity options))
@@ -280,15 +277,15 @@
 
 (defn scope-area-row [form op & options]
   (apply category-chart-scope
-         `charts/area-chart apply-row-op op form options))
+         `incanter.charts/area-chart apply-row-op op form options))
 
 (defn scope-area-col [form op & options]
   (apply category-chart-scope
-         `charts/area-chart apply-col-op op form options))
+         `incanter.charts/area-chart apply-col-op op form options))
 
 (defn scope-area [form & options]
   (apply scope-area-row form var-identity
-         :chart-modifier-fn #(charts/set-alpha % 0.5)
+         :chart-modifier-fn #(incanter.charts/set-alpha % 0.5)
          options))
 
 (defn scope-area-sum [form & options]
@@ -337,11 +334,11 @@
 
 (defn scope-stacked-area-row [form op & options]
   (apply category-chart-scope
-         `charts/stacked-area-chart apply-row-op op form options))
+         `incanter.charts/stacked-area-chart apply-row-op op form options))
 
 (defn scope-stacked-area-col [form op & options]
   (apply category-chart-scope
-         `charts/stacked-area-chart apply-col-op op form options))
+         `incanter.charts/stacked-area-chart apply-col-op op form options))
 
 (defn scope-stacked-area [form & options]
   (apply scope-stacked-area-row form var-identity options))
@@ -392,17 +389,17 @@
 
 (defn scope-pie-row [form op & options]
   (apply pie-chart-scope
-         `charts/pie-chart apply-row-op op form options))
+         `incanter.charts/pie-chart apply-row-op op form options))
 
 (defn scope-pie-col [form op & options]
   (apply pie-chart-scope
-         `charts/pie-chart apply-col-op op form options))
+         `incanter.charts/pie-chart apply-col-op op form options))
 
 (defn seq-op-applicator [data op] (map op data))
 
 (defn scope-pie [form & options]
   (apply pie-chart-scope
-         `charts/pie-chart seq-op-applicator identity form options))
+         `incanter.charts/pie-chart seq-op-applicator identity form options))
 
 (defn scope-pie-sum [form & options]
   (apply scope-pie-row form +
@@ -444,7 +441,7 @@
 
 (defn histogram-chart
   ([title density? data]
-   (charts/histogram (flatten data)
+   (incanter.charts/histogram (flatten data)
                      :x-label ""
                      :title title
                      :density density?))
@@ -453,12 +450,12 @@
 
 (defn view-histogram
   [applicator op data title density?]
-  (incanter/view
+  (incanter.core/view
    (apply histogram-chart title density?
           ((op-applicator applicator data) op))))
 
 (defn histogram-scope
-  "Create a scope (data inspection) for a chart."
+  "Create a chart-scope (data inspection) for a chart."
   [applicator op form density?]
   `(do (view-histogram ~applicator
                        ~op
@@ -482,11 +479,11 @@
 
   (defn save-chart
     [chart-builder empty-chart applicator op data post-application-fn]
-    (incanter/save (apply chart-builder
-                          empty-chart
-                          (-> ((op-applicator applicator data) op)
-                              post-application-fn))
-                   *path*))
+    (incanter.core/save (apply chart-builder
+                               empty-chart
+                               (-> ((op-applicator applicator data) op)
+                                   post-application-fn))
+                        *path*))
 
   (defn save-scope
     "Create a scope (data inspection) for a chart."
